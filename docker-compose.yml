@@ -1,0 +1,72 @@
+version: "2"
+services:
+  aplicacao:
+    container_name: aplicacao
+    build: .
+    ports:
+      - "5000:5000"
+    networks:
+      - launchstore
+    environment:
+      POSTGRES_PASSWORD: senha
+      POSTGRES_USER: postgres
+      POSTGRES_DB: launchstore
+      POSTGRES_PORT: 5432
+    depends_on:
+      - postgresql
+    command: npm start
+
+  postgresql:
+    container_name: postgresql
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    networks:
+      - launchstore
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: senha
+      POSTGRES_DB: launchstore
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - "./database.sql:/docker-entrypoint-initdb.d/database.sql"
+      - "./postgres_data:/var/lib/postgresql/data"
+
+  pgadmin4:
+    container_name: pgadmin4
+    image: dpage/pgadmin4:latest
+    restart: always
+    networks:
+      - launchstore
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: senha
+      POSTGRES_DB: launchstore
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      - postgresql
+
+networks:
+  launchstore:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  pgadmin:
